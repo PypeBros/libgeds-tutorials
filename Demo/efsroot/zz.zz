@@ -1,0 +1,49 @@
+DSFLAGS := -I libgeds/include/ -I wrappers -I $(DEVKITPRO)/libnds/include -DARM9 \
+	-include wrappers/nds/system.h -include wrappers/fake.h -DDYNAMIC_ENGINE
+CXXFLAGS += -m32 -Duint=uint32_t -g -Wall -Weffc++ -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -O0 -std=gnu++0x
+SOURCES = $(filter-out %/die.cpp,$(wildcard libgeds/source/*.cpp))
+SOURCES += $(filter-out %/main.cpp,$(wildcard LevelEditor/source/*.cpp))
+OBJECTS = $(patsubst LevelEditor/source/%,output/LevelEditor/%,$(patsubst libgeds/source/%,output/libgeds/%,$(patsubst %.cpp,%.o,$(SOURCES))))
+TESTSRC = $(wildcard tests/*.cpp)
+REGFILE = /tmp/DShw
+OBJECTS += $(patsubst tests/%,output/tests/%,$(patsubst %.cpp,%.o,$(TESTSRC)))
+
+all: testme sprdo sprck $(REGFILE)
+
+sprck: SpriteEditor/test/sprck.cpp libgeds/source/SpriteSet.cpp fakes.cpp libgeds/source/spritepage_granularity.cpp libgeds/source/iReportDefault.cpp
+	$(CXX) $(CXXFLAGS) $(DSFLAGS) $^ -o $@ -DNO_FAT -DNO_BACKUP -DNO_DEFAULT_WARN
+
+sprdo: SpriteEditor/test/sprdo.cpp libgeds/source/SpriteSet.cpp libgeds/source/SpriteAnim.cpp fakes.cpp libgeds/source/spritepage_granularity.cpp libgeds/source/iReportDefault.cpp
+	$(CXX) $(CXXFLAGS) $(DSFLAGS) $^ -o $@ -DNO_FAT -DNO_BACKUP -I SpriteEditor/source/
+
+output/LevelEditor/%.o: LevelEditor/source/%.cpp
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) $(DSFLAGS) $< -c -o $@ -MD -MF $@.d
+
+output/libgeds/%.o: libgeds/source/%.cpp
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) $(DSFLAGS) $< -c -o $@ -MD -MF $@.d
+
+output/tests/%.o: tests/%.cpp
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) $(DSFLAGS) $< -c -o $@ -MD -MF $@.d
+
+output/%.o: %.cpp
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) $< -c -o $@ -MD -MF $@.d
+
+testme: output/main.o output/alloc.o output/fakes.o $(OBJECTS) 
+	$(CXX) $^ -o testme $(CXXFLAGS)
+
+$(REGFILE): Makefile
+	dd if=/dev/zero of=/tmp/DShw bs=1M count=64
+
+-include $(patsubst %.o,%.o.d,$(OBJECTS))
+
+clean:
+	rm output -rf
+
+apt-get: 
+	sudo apt-get install libnewlib-dev libc6-dev-i386
+debug:
+	echo $(DSFLAGS)
