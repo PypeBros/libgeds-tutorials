@@ -313,7 +313,7 @@ bool CheckFile(char *path, bool save)
 				char magicString[12] = "";
 				int dataChunk_size, efs_offset = 0;
 				
-			    iprintf("candidate: %s, %i vs %i\n",path,size,efs_filesize);		
+			    iprintf("candidate: %s, %lu vs %lu\n",path,size,efs_filesize);		
 
 				// rebuild magic string
 				strcat(magicString, efsMagicStringP1);
@@ -391,8 +391,6 @@ bool SearchDirectory()
 	struct dirent *dent;
 	bool found = false;
 	static	char path[EFS_MAXPATHLEN];   // since there ins't use of these vars accross searchDirectory
-	static	char filename[EFS_MAXPATHLEN];// calls, we can make them static and avoid repeating them on stack.
-	struct stat st; 
  
 	/** diropen now makes call to GetDeviceOpTab ... which behaviour is sealed in devkitArm .. */
 	dir = opendir(".");

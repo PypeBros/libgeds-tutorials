@@ -78,7 +78,7 @@ public:
   }
   
   virtual bool event(Widget *w, uint id) {
-    bool handled;
+    bool handled = true;
     /* handle buttons presses here. */
     ge.release();
     return handled;
