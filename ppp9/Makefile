@@ -34,6 +34,7 @@ clean: $M-clean
 $M-clean:
 	@echo $@ ...
 	rm -fr $(ppp9_BUILD) $(ppp9_LIBRARY)
+	rm -fr $(OUTPUT)/bin/efs
 
 $M-dox:
 	-rm dox/html/*.html
@@ -48,6 +49,16 @@ $M-postdox: dox
 
 install: $M-install
 $M-install:
+
+$M-tools: $(OUTPUT)/bin/efs
+
+$(OUTPUT)/bin/%: $(ROOT)/$M/tools/%.cpp
+	mkdir -p $(@D)
+	g++ $< -o $@
+
+$(OUTPUT)/bin/%: $(ROOT)/$M/tools/%.c
+	mkdir -p $(@D)
+	gcc $< -o $@
 
 #---------------------------------------------------------------------------------
 

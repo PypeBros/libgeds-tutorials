@@ -12,7 +12,7 @@ LIBNDS  :=      $(DEVKITPRO)/libnds
 
 OUTPUT=$(ROOT)/outnds
 O=$(OUTPUT)
-EFSTOOL = $(ROOT)/efs
+EFSTOOL = $(OUTPUT)/bin/efs
 LIBNTXM = $(ROOT)/libntxm
 LIBGEDS = $(ROOT)/libgeds
 LIBPPP9 = $(ROOT)/ppp9
