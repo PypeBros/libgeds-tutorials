@@ -22,6 +22,7 @@
 
 
 #include "GuiEngine.h"
+#include "SpriteSet.h"
 
 /** NTXM is the sound library for playing XM files. it requires one instance of
  ** an NTXM9 class for control. See ntxm9.h for details.
@@ -86,7 +87,10 @@ public:
   
 
   void setactive() {
- 
+    SpriteRam myRam(WIDGETS_CHARSET(512));
+    SpriteSet mySet(&myRam, BG_PALETTE);
+
+    mySet.Load("efs:/bg.spr");
     /** there's only one music file in this project, and that's STRTRK.XM 
      **  the different sub-tunes and jingles are implemented by using loops
      **  using the Bxx module command that forces the player to jump to a
@@ -133,6 +137,17 @@ public:
 
   virtual void restore() {
     iprintf("(A) play (Y) stop (X) info (B) dump\n");
+    REG_DISPCNT|=DISPLAY_BG2_ACTIVE;
+    REG_BG2CNT=BG_MAP_BASE(GEBGROUND)|BG_TILE_BASE(0)|BG_COLOR_256;
+    tileno_t tile = 256;
+    for (int l=0; l<32; l+=2) {
+      for (int b=0; b<8; b+=2) {
+	WIDGETS_BACKGROUND[b+l*32]=tile++;
+	WIDGETS_BACKGROUND[b+l*32 +1 ]=tile++;
+	WIDGETS_BACKGROUND[b+l*32 +32]=tile++;
+	WIDGETS_BACKGROUND[b+l*32 +33]=tile++;
+      }
+    }
   }
   
   virtual void release () {
