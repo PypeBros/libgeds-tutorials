@@ -10,8 +10,11 @@
 #ifndef __SPRITE_SET_H
 #define __SPRITE_SET_H
 
+#define SPR_FILE_ANIM_MAGIC 0x4d494e41 // one animation data
+#define SPR_FILE_TINY_MAGIC 0x594e4954 // one animation thumbnail
 #include <vector>
 #include "debug.h"
+#include "UsingSprites.h"
 #include "SpriteTypes.h"
 
 /** common header for chunks in a .SPR file */
@@ -32,7 +35,7 @@ class SpriteSheet;
  *   in SpriteRam for each of its blocks. To edit a page, you must first
  *   load it on a SpriteSheet.
  */
-class SpritePage : private std::vector<tileno_t> {
+class SpritePage : private UsingSprites, private std::vector<tileno_t> {
   //  std::vector<u16> tiles;     // a pointer to each tile in the page.
   tile_size_t height,width; 
   tile_size_t nb;           // number of tiles in the page.
@@ -59,7 +62,6 @@ class SpritePage : private std::vector<tileno_t> {
 
   ~SpritePage() {
   }
-  friend class SpriteSheet;
   friend class SpriteSet;
   blockno_t /*std::vector<_Tp, _Alloc>::*/size() const {
     return (blockno_t) std::vector<tileno_t>::size();
@@ -127,6 +129,13 @@ class SpritePage : private std::vector<tileno_t> {
   tile_size_t getHeight() const { return height; }
   /** width of blocks on this page, in tiles */
   tile_size_t getWidth() const { return width; }
+  
+  bool setOAM(blockno_t sprid, gSpriteEntry *oam) const;
+  /** setup frame, x and y, unhide sprite. */
+  void changeOAM(gSpriteEntry *oam, u16 x, u16 y, blockno_t sprid) const;
+  /** define attributes, hide sprite */
+  bool setupOAM(gSpriteEntry *oam, u16 flags=0) const;
+
 };
 
 /** collects information about a storage area for tiles and provides allocation functions
@@ -411,7 +420,7 @@ class SpriteListenerInterface {
   SpriteListenerInterface *next;
   bool enabled;
  public:
-  virtual void event(SpriteSheet *s, u16 sprid)=0;
+  virtual void event(SpriteSheet *s, blockno_t sprid, bool store)=0;
   void chain(SpriteListenerInterface *sli) {
     next=sli; enabled=true;
   }

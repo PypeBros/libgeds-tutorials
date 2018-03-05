@@ -1,6 +1,12 @@
 #ifndef __SPRITE_TYPES_H
 #define __SPRITE_TYPES_H
 
+typedef enum {
+  OAM0=0, OAM_LAST=127,
+  OAM0_SUB=128, OAM_LAST_SUB=255,
+  NB_OAMS=256
+} oamno_t;
+
 #ifndef TYPETEST_PAGENO
 typedef u16 pageno_t; //!<  identifies a SpritePage within a SpriteSet
 const pageno_t PAGE0 = 0;
