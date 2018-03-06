@@ -13,14 +13,6 @@
 #include <fat.h>
 #include <sys/dir.h>
 #include <sys/types.h> 
-
-/******************************************************************************
- ** Global project settings
- **----------------------------------------------------------------------------
- ** How is the game engine working : see the libgeds sub-project
- ******************************************************************************/
-
-
 #include "GuiEngine.h"
 #include "SpriteSet.h"
 
@@ -33,15 +25,9 @@ NTXM9 *ntxm9 = 0;
 
 
 /** Engine class captures the low-level interaction with the DS hardware,
- **  esp. it proceeds with video initialisation, is responsible of sprites 
+ **  esp. it proceeds with video initialisation, triggers sprites 
  **  registers reporgramming on VBlank, etc.
  **/
-
-
-/* each bit is one screen bit0 = GEBGROUND on main,
- * bit1 = GEWIDGET  on main, bit2 = GEYOURMAP, bit4 = GEBGROUND on SUB
- * Any screen with its bit set won't be affected by Engine::clearscreen
- */
 Engine ge((GuiConfig)(CONSOLE_DOWN|MORE_BG_MEMORY));
 
 class MetaWindow;
@@ -115,11 +101,6 @@ public:
     sprSet.Load("efs:/hero.spr");
     
     /** there's only one music file in this project. 
-     **  the different sub-tunes and jingles are implemented by using loops
-     **  using the Bxx module command that forces the player to jump to a
-     **  specific location in the pattern-order-table. The game logic contains
-     **  some track(xx) statements that forces the player to move out of the
-     **  current loop on specific events.
      **/
     FileDataReader fd("efs:/sndtrk.xm");
     ntxm9->stop();
