@@ -1,5 +1,6 @@
 #include <nds.h>
 #include "GuiEngine.h"
+#include "UsingSprites.h"
 #include <stdio.h>
 
 bool debug_mode=false;
@@ -489,7 +490,7 @@ void Engine::prepare(void)
   SPRITE_PALETTE[0xff]=RGB15(31,31,31);
   SPRITE_PALETTE_SUB[0xff]=RGB15(31,31,31);
 
-  // HOOK: UsingSprites::DisableAll();
+  UsingSprites::DisableAll();
   
   memset(WIDGETS_BACKGROUND, 0, 32*32*4*sizeof(u16));
   memset(SUB_WIDGETS_BACKGROUND, 0, 32*32*4*sizeof(u16));
@@ -503,7 +504,7 @@ void Engine::prepare(void)
   }
 
 
-  // HOOK: UsingSprites::Init();
+  UsingSprites::Init();
   
   if (!singleton) {
     singleton=this;
@@ -516,7 +517,7 @@ void Engine::prepare(void)
 
 
 void Engine::sanitize() {
-  // HOOK: UsingSprites::sanitize();
+  UsingSprites::sanitize();
 }
 
 #ifdef DYNAMIC_ENGINE
@@ -575,7 +576,7 @@ void Engine::sync(void) {
   ///* if (use3D) */glFlush();
 
   swiWaitForVBlank();
-  // HOOK: UsingSprites::SyncToOam();
+  UsingSprites::SyncToOam();
 }
 
 void Window::dump() {
