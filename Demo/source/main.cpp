@@ -57,21 +57,43 @@ void iReport::diagnose() {
   die("diagnose", 0);
 }
 
+class Hero : private UsingSprites {
+  NOCOPY(Hero);
+  const SpritePage *page;
+  unsigned x, y;
+  oamno_t oam;
+public:
+  Hero(const SpritePage *pg) : page(pg), x(128), y(96),
+			       oam((oamno_t) gResources->allocate(RES_OAM))
+  {
+    page->setOAM((blockno_t)2, sprites);
+    
+  }
+
+  void move(int dx, int dy) {
+    x += dx; y += dy;
+    iprintf("(%u,%u)", x, y);
+    page->changeOAM(sprites + oam, x, y, (blockno_t) 4);
+  }
+};
+
 class MetaWindow : public DownWindow {
   NOCOPY(MetaWindow);
   /* declare your 'xxxWindow' objects here. */
   Window *active;
+  SpriteRam sprRam;
+  SpriteSet sprSet;
+  Hero *hero;
 public:
 
   /** in the 'PPP Engine' framework, core activities are handled in Windows that can
    **  be stacked onto each other. The Meta Window is the top-level object that usually
    **  performs application-level initialisation (here, NTXM) and decide which part of 
    **  the application should run when. 
-   **
-   ** in our game, we have two main states : playing (the CmdWindow that executed .cmd
-   **  files) or loading (the Loading Window). 
    **/
-  MetaWindow(): active(0)
+  MetaWindow(): active(0),
+		sprRam(SPRITE_GFX), sprSet(&sprRam, SPRITE_PALETTE),
+		hero(0)
   {
     iprintf("creating windows -- ");
     ntxm9 = new NTXM9();
@@ -89,9 +111,10 @@ public:
   void setactive() {
     SpriteRam myRam(WIDGETS_CHARSET(512));
     SpriteSet mySet(&myRam, BG_PALETTE);
-
     mySet.Load("efs:/bg.spr");
-    /** there's only one music file in this project, and that's STRTRK.XM 
+    sprSet.Load("efs:/hero.spr");
+    
+    /** there's only one music file in this project. 
      **  the different sub-tunes and jingles are implemented by using loops
      **  using the Bxx module command that forces the player to jump to a
      **  specific location in the pattern-order-table. The game logic contains
@@ -103,6 +126,7 @@ public:
     u16 err = ntxm9->load(&fd);
     ge.setWindow(active);
     if (err!=0) iprintf("ntxm says %x\n",err);
+    hero = new Hero(sprSet.getpage(PAGE0));
   }
 
 
@@ -124,6 +148,19 @@ public:
       //      if (code)
       iprintf("%s(%x) @p%i:r%i:c%i\n",code?"oops":"okay",code,pat,row,chn);
       return true;
+    }
+
+    if (keys & KEY_UP) {
+      hero->move(0, -4);
+    }
+    if (keys & KEY_DOWN) {
+      hero->move(0, 4);
+    }
+    if (keys & KEY_LEFT) {
+      hero->move(-4, 0);
+    }
+    if (keys & KEY_RIGHT) {
+      hero->move(4, 0);
     }
 
     if (keys&KEY_B) {
