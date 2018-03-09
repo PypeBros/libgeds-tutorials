@@ -1,6 +1,7 @@
 #include <nds.h>
 #include "GuiEngine.h"
 #include "UsingSprites.h"
+#include "Animator.h"
 #include <stdio.h>
 
 bool debug_mode=false;
@@ -147,11 +148,16 @@ u16* Engine::editpal(uint bg, bool edit) {
 
 void Engine::setWindow(Window *itf)  { 
   current=0;
+  nextWindow=0;
 
   // not processed if switching to a sub-window.
   Window *w;
   
   for (w = interface; w && w!=itf && !itf->issubwin(w); w=w->holder()) {    
+    if (Animator::IsAnimating()) {
+      nextWindow=itf;
+      return;
+    }
     w->release();
   }
   
@@ -557,7 +563,7 @@ Engine::Engine(enum GuiConfig cfg, Window *itf,u16 bgcolor) :
 //! run animation list
 /* this one is static too */
 void Engine::animate(void) {
-  // HOOK: Animator::Animate();
+  Animator::Animate();
   // invoke registered post-VBL callbacks.
   // HOOK: iVblCallback::runAllPost();
   glPopMatrix(1);
@@ -565,7 +571,7 @@ void Engine::animate(void) {
 
   sync();
   // HOOK: iVblCallback::runAllVbl();
-  // HOOK: Animator::ProcessPending();
+  Animator::ProcessPending();
   if (nextWindow) setWindow(nextWindow);
   
 }
