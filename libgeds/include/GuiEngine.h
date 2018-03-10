@@ -368,6 +368,18 @@ public:
   }
 };
 
+/** a pseudo-window to capture 'guru mediation' customization
+ */
+class GuruWindow : public Window {
+public:
+  GuruWindow();
+  /** will be invoked when a hardware exception is triggered
+   */
+  virtual void restore();
+  virtual Widget* add(screen_pixel_t x, screen_pixel_t y, Widget* w) { return w; }
+  virtual void release() {}
+};
+
 #define CONCLEAR "\x1b[2J"
 #define CONGOTO  "\x1b[%d;%dH"
 #define CON_GOTO(r,c) "\x1b["#r";"#c"H"

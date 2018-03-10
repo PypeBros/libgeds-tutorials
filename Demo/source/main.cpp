@@ -15,6 +15,7 @@
 #include <sys/types.h> 
 #include "GuiEngine.h"
 #include "SpriteSet.h"
+#include "Exceptions.h"
 #include "Animator.h"
 
 /** NTXM is the sound library for playing XM files. it requires one instance of
@@ -23,15 +24,6 @@
 #include <ntxm/ntxm9.h>
 NTXM9 *ntxm9 = 0;
 #define HAS_NTXM
-
-
-/** Engine class captures the low-level interaction with the DS hardware,
- **  esp. it proceeds with video initialisation, triggers sprites 
- **  registers reporgramming on VBlank, etc.
- **/
-Engine ge((GuiConfig)(CONSOLE_DOWN|MORE_BG_MEMORY));
-
-class MetaWindow;
 
 void iReport::diagnose() {
   iprintf("@_@\n@ %s %s",repbuf,repbuf+strlen(repbuf)+1);
@@ -43,6 +35,15 @@ void iReport::diagnose() {
 
   die("diagnose", 0);
 }
+
+
+/** Engine class captures the low-level interaction with the DS hardware,
+ **  esp. it proceeds with video initialisation, triggers sprites 
+ **  registers reporgramming on VBlank, etc.
+ **/
+Engine ge((GuiConfig)(CONSOLE_DOWN|MORE_BG_MEMORY));
+
+class MetaWindow;
 
 class Hero : public Animator, private UsingSprites {
   NOCOPY(Hero);
@@ -180,26 +181,6 @@ public:
 
 #include "efs_lib.h"
 
-#include <cxxabi.h>
-
-extern "C" std::type_info* __cxa_current_exception_type();
-
-extern "C" void terminator() {
-  std::type_info *t = __cxa_current_exception_type();
-  iprintf("** exception %s reached top-level **\n", (t)?t->name():"unknown");
-  die(0,0);
-}
-
-extern "C" void guruMeditationDump(); // should sit in libnds : gurumeditation.o
-
-static void myGuruHandler() {
-//---------------------------------------------------------------------------------
-	guruMeditationDump();
-	REG_DISPCNT &= ~DISPLAY_WIN0_ON;
-	REG_DISPCNT &= ~DISPLAY_WIN0_ON;
-	die("<unknown>",0);
-}
-
 /************************************************************************************
  ** So, this is where everything starts. Since C++ offers no guarantee on the
  ** order of initialisations, we tried to keep the constructors of global 
@@ -213,16 +194,13 @@ static void myGuruHandler() {
 int main(int argc, char* argv[])
 {
   // note: the console is currently restricted to ASCII charset.
-  std::set_terminate(terminator);
+  ExceptionTerminator _terminator;
   ge.prepare();                      // make video hardware ready for operation
   ge.dump(); // enables debug.
   iprintf("PPP Team's runbox v 0.3 lite\n (c) sylvain 'pype' martin \n");
   MetaWindow mw;
-
-  iprintf("beware the guru\n");
-  defaultExceptionHandler();
-  setExceptionHandler(myGuruHandler) ;
-
+  GuruWindow guru;
+#ifdef __USING_NODA__
   /** the Embedded File System by NODA allows us to use libfat to access additional
    **  content present in the file without consuming additional RAM memory. smart.
    **/
@@ -230,7 +208,8 @@ int main(int argc, char* argv[])
     iprintf("Cannot find data files (%i, %s)!\n",argc,argv[0]!=0?argv[0]:"#");
   else 
     iprintf(CONCLEAR "system initialisation completed");
-    
+#endif
+  
   /** this is where the main meal starts. Esp, when MetaWindow::setactive() calls 
    **  GuiEngine::setWindow(active==CmdWindow), execution is resumed at CmdWindow::restore
    **  that makes the very first level (the menu) to be parsed and the game starts.
