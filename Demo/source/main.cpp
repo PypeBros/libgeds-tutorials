@@ -15,6 +15,7 @@
 #include <sys/types.h> 
 #include "GuiEngine.h"
 #include "SpriteSet.h"
+#include "Animator.h"
 
 /** NTXM is the sound library for playing XM files. it requires one instance of
  ** an NTXM9 class for control. See ntxm9.h for details.
@@ -43,23 +44,37 @@ void iReport::diagnose() {
   die("diagnose", 0);
 }
 
-class Hero : private UsingSprites {
+class Hero : public Animator, private UsingSprites {
   NOCOPY(Hero);
   const SpritePage *page;
   unsigned x, y;
   oamno_t oam;
 public:
-  Hero(const SpritePage *pg) : page(pg), x(128), y(96),
+  Hero(const SpritePage *pg) : Animator(0), page(pg), x(128), y(96),
 			       oam((oamno_t) gResources->allocate(RES_OAM))
   {
     page->setOAM((blockno_t)2, sprites);
     
   }
 
-  void move(int dx, int dy) {
+  donecode play(void) {
+    uint keys = keysHeld()|keysDown();
+    int dx=0, dy=0;
+    if (keys & KEY_UP) {
+      dy = -4;
+    }
+    if (keys & KEY_DOWN) {
+      dy = 4;
+    }
+    if (keys & KEY_LEFT) {
+      dx = -4;
+    }
+    if (keys & KEY_RIGHT) {
+      dx = 4;
+    }
     x += dx; y += dy;
-    iprintf("(%u,%u)", x, y);
     page->changeOAM(sprites + oam, x, y, (blockno_t) 4);
+    return Animator::QUEUE;
   }
 };
 
@@ -108,6 +123,7 @@ public:
     ge.setWindow(active);
     if (err!=0) iprintf("ntxm says %x\n",err);
     hero = new Hero(sprSet.getpage(PAGE0));
+    hero->run()->regAnim(true);
   }
 
 
@@ -129,19 +145,6 @@ public:
       //      if (code)
       iprintf("%s(%x) @p%i:r%i:c%i\n",code?"oops":"okay",code,pat,row,chn);
       return true;
-    }
-
-    if (keys & KEY_UP) {
-      hero->move(0, -4);
-    }
-    if (keys & KEY_DOWN) {
-      hero->move(0, 4);
-    }
-    if (keys & KEY_LEFT) {
-      hero->move(-4, 0);
-    }
-    if (keys & KEY_RIGHT) {
-      hero->move(4, 0);
     }
 
     if (keys&KEY_B) {
