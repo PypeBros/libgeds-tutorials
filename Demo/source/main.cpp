@@ -50,9 +50,11 @@ class Hero : public Animator, private UsingSprites {
   const SpritePage *page;
   unsigned x, y;
   oamno_t oam;
+  unsigned frame;
 public:
   Hero(const SpritePage *pg) : Animator(0), page(pg), x(128), y(96),
-			       oam((oamno_t) gResources->allocate(RES_OAM))
+			       oam((oamno_t) gResources->allocate(RES_OAM)),
+			       frame(0)
   {
     page->setOAM((blockno_t)2, sprites);
     
@@ -60,7 +62,10 @@ public:
 
   donecode play(void) {
     uint keys = keysHeld()|keysDown();
+    static const unsigned NFRAMES = 8;
+    static int walking[NFRAMES] = { 4, 5, 6, 7, 8, 9, 10, 11 };
     int dx=0, dy=0;
+    
     if (keys & KEY_UP) {
       dy = -4;
     }
@@ -74,7 +79,8 @@ public:
       dx = 4;
     }
     x += dx; y += dy;
-    page->changeOAM(sprites + oam, x, y, (blockno_t) 4);
+    page->changeOAM(sprites + oam, x, y,
+		    (blockno_t) walking[((frame++)/3) % NFRAMES]);
     return Animator::QUEUE;
   }
 };
