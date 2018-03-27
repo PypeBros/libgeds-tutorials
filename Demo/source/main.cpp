@@ -17,6 +17,9 @@
 #include "SpriteSet.h"
 #include "Exceptions.h"
 #include "Animator.h"
+#include "interfaces.h"
+#include "GameObject.h"
+
 
 /** NTXM is the sound library for playing XM files. it requires one instance of
  ** an NTXM9 class for control. See ntxm9.h for details.
@@ -45,21 +48,30 @@ Engine ge((GuiConfig)(CONSOLE_DOWN|MORE_BG_MEMORY));
 
 class MetaWindow;
 
-class Hero : public Animator, private UsingSprites {
+class Hero : public GameObject, UsingSprites { 
   NOCOPY(Hero);
   const SpritePage *page;
   unsigned x, y;
   oamno_t oam;
   unsigned frame;
 public:
-  Hero(const SpritePage *pg) : Animator(0), page(pg), x(128), y(96),
-			       oam((oamno_t) gResources->allocate(RES_OAM)),
-			       frame(0)
+  Hero(const SpritePage *pg)
+    :  GameObject(HERO, 0, "hero"),
+    page(pg), x(128), y(96),
+    oam((oamno_t) gResources->allocate(RES_OAM)),
+    frame(0)
   {
     page->setOAM((blockno_t)2, sprites);
     
   }
 
+  void dump(const char* why) {
+  }
+
+  void setxy(int _x, int _y) {
+    x = _x; y = _y;
+  }
+  
   donecode play(void) {
     uint keys = keysHeld()|keysDown();
     static const unsigned NFRAMES = 8;
