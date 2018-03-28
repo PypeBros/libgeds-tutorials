@@ -12,7 +12,9 @@ typedef int cflags;
 #include "debug.h"
 
 // see StateMachine.h
-class GobTransition; 
+class GobTransition;
+class GobCollision;
+class GobState;
 
 /** "gob registers" assignments agreed across controllers. **/
 enum gobdata {
@@ -129,5 +131,6 @@ public:
     _y=(y>>8)+(hbox*center)/2;
   }
 
+  static GameObject* CreateSimpleGob(CAST _cast, GobState *init, int gno = -1);
 };
 #endif

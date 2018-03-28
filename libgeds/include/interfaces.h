@@ -98,8 +98,8 @@ class iScript {
  protected:
 public:
 
-  static const uint tile_index;
-  static const uint map_index;
+  static const uint tile_index = 2;
+  static const uint map_index = 8;
   //! continuously parse until a message is printed.
   virtual bool parsechunk()  throw(iScriptException) = 0;
   

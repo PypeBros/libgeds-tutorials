@@ -9,6 +9,7 @@
 #include "interfaces.h"
 #include "SpriteAnim.h" // for iAnimUser
 #include "GameObject.h"
+#include "GameConstants.h"
 
 #define MAX_LIMBS 12
 
@@ -64,7 +65,7 @@ public:
 /** an animation. Parses and provide commands for the suited type of
  *   object.
  */
-class GobAnim : iReport, iAnimUser, UsingTank, private UsingSprites {
+class GobAnim : iReport, iAnimUser, UsingTank, UsingParsing, private UsingSprites {
   NOCOPY(GobAnim);
   void *ready;
   unsigned *parsed;
@@ -205,7 +206,7 @@ extern GobTransition* noTransitions;
  *  state machine, and capture different properties that are
  *  state-dependent, such as hit boxes.
  */
-class GobState : iReport, iAnimUser, UsingTank {
+class GobState : iReport, iAnimUser, UsingTank, UsingParsing {
   NOCOPY(GobState);
   char name[8];
   GobAnim *anim;

@@ -5,6 +5,7 @@
 #include "SpriteSet.h"
 #include "GuiEngine.h"
 #include "interfaces.h"
+#include "GameConstants.h"
 #include "SpriteAnim.h" // for iAnimUser
 #include "GameObject.h"
 #include "StateMachine.h"
@@ -103,7 +104,7 @@ const char* GobAnim::parse(InputReader *input) {
     char *l=0;
     do {
       if (!input->readline(lb,256)) break;
-      // if (!(l=GameScript::content(lb))) continue; FIXME: skip comments & padding
+      if (!(l=UsingParsing::content(lb))) continue;
 
       { 
 	unsigned frame,delay,part;

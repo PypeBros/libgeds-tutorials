@@ -19,7 +19,9 @@
 #include "Animator.h"
 #include "interfaces.h"
 #include "GameObject.h"
+#include "GameScript.h"
 
+const char * UsingParsing::default_dir="efs:/";
 
 /** NTXM is the sound library for playing XM files. it requires one instance of
  ** an NTXM9 class for control. See ntxm9.h for details.
@@ -27,6 +29,11 @@
 #include <ntxm/ntxm9.h>
 NTXM9 *ntxm9 = 0;
 #define HAS_NTXM
+
+void subsong(int pp) {
+  ntxm9->play(true, pp);
+}
+
 
 void iReport::diagnose() {
   iprintf("@_@\n@ %s %s",repbuf,repbuf+strlen(repbuf)+1);
@@ -104,6 +111,7 @@ class MetaWindow : public DownWindow {
   SpriteRam sprRam;
   SpriteSet sprSet;
   Hero *hero;
+  GameScript script;
 public:
 
   /** in the 'PPP Engine' framework, core activities are handled in Windows that can
@@ -113,7 +121,7 @@ public:
    **/
   MetaWindow(): active(0),
 		sprRam(SPRITE_GFX), sprSet(&sprRam, SPRITE_PALETTE),
-		hero(0)
+		hero(0), script(0)
   {
     iprintf("creating windows -- ");
     ntxm9 = new NTXM9();
