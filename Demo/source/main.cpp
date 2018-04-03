@@ -20,6 +20,7 @@
 #include "interfaces.h"
 #include "GameObject.h"
 #include "GameScript.h"
+#include "GameWindow.hpp"
 
 const char * UsingParsing::default_dir="efs:/";
 
@@ -55,63 +56,14 @@ Engine ge((GuiConfig)(CONSOLE_DOWN|MORE_BG_MEMORY));
 
 class MetaWindow;
 
-class Hero : public GameObject, UsingSprites { 
-  NOCOPY(Hero);
-  const SpritePage *page;
-  unsigned x, y;
-  oamno_t oam;
-  unsigned frame;
-public:
-  Hero(const SpritePage *pg)
-    :  GameObject(HERO, 0, "hero"),
-    page(pg), x(128), y(96),
-    oam((oamno_t) gResources->allocate(RES_OAM)),
-    frame(0)
-  {
-    page->setOAM((blockno_t)2, sprites);
-    
-  }
-
-  void dump(const char* why) {
-  }
-
-  void setxy(int _x, int _y) {
-    x = _x; y = _y;
-  }
-  
-  donecode play(void) {
-    uint keys = keysHeld()|keysDown();
-    static const unsigned NFRAMES = 8;
-    static int walking[NFRAMES] = { 4, 5, 6, 7, 8, 9, 10, 11 };
-    int dx=0, dy=0;
-    
-    if (keys & KEY_UP) {
-      dy = -4;
-    }
-    if (keys & KEY_DOWN) {
-      dy = 4;
-    }
-    if (keys & KEY_LEFT) {
-      dx = -4;
-    }
-    if (keys & KEY_RIGHT) {
-      dx = 4;
-    }
-    x += dx; y += dy;
-    page->changeOAM(sprites + oam, x, y,
-		    (blockno_t) walking[((frame++)/3) % NFRAMES]);
-    return Animator::QUEUE;
-  }
-};
-
 class MetaWindow : public DownWindow {
   NOCOPY(MetaWindow);
   /* declare your 'xxxWindow' objects here. */
   Window *active;
-  SpriteRam sprRam;
-  SpriteSet sprSet;
-  Hero *hero;
-  GameScript script;
+  InputReader* reader;
+  LoadingWindow loadwin;
+  GameWindow gamewin;
+
 public:
 
   /** in the 'PPP Engine' framework, core activities are handled in Windows that can
@@ -120,12 +72,15 @@ public:
    **  the application should run when. 
    **/
   MetaWindow(): active(0),
-		sprRam(SPRITE_GFX), sprSet(&sprRam, SPRITE_PALETTE),
-		hero(0), script(0)
+		reader(0),
+		loadwin(&reader),
+		gamewin(this, &reader, &loadwin)
+		
   {
+    /** there is no EFS yet at this point */
     iprintf("creating windows -- ");
     ntxm9 = new NTXM9();
-    active = this;
+    active = &gamewin;
   }
   
   virtual bool event(Widget *w, uint id) {
@@ -137,20 +92,15 @@ public:
   
 
   void setactive() {
-    SpriteRam myRam(WIDGETS_CHARSET(512));
-    SpriteSet mySet(&myRam, BG_PALETTE);
-    mySet.Load("efs:/bg.spr");
-    sprSet.Load("efs:/hero.spr");
-    
     /** there's only one music file in this project. 
      **/
     FileDataReader fd("efs:/sndtrk.xm");
+    reader = new FileReader("efs:/demo.cmd");
     ntxm9->stop();
     u16 err = ntxm9->load(&fd);
     ge.setWindow(active);
+    restore();
     if (err!=0) iprintf("ntxm says %x\n",err);
-    hero = new Hero(sprSet.getpage(PAGE0));
-    hero->run()->regAnim(true);
   }
 
 
@@ -173,7 +123,6 @@ public:
       iprintf("%s(%x) @p%i:r%i:c%i\n",code?"oops":"okay",code,pat,row,chn);
       return true;
     }
-
     if (keys&KEY_B) {
       defaultExceptionHandler();
       iprintf("beware the guru\n");
@@ -186,8 +135,11 @@ public:
   virtual void restore() {
     iprintf("(A) play (Y) stop (X) info (B) dump\n");
     REG_DISPCNT|=DISPLAY_BG2_ACTIVE;
-    REG_BG2CNT=BG_MAP_BASE(GEBGROUND)|BG_TILE_BASE(0)|BG_COLOR_256;
-    tileno_t tile = 256;
+    REG_BG2CNT=BG_MAP_BASE(GEBGROUND)|BG_TILE_BASE(2)|BG_COLOR_256;
+    tileno_t tile = 0;
+    for (int i = 0; i < 32*32; i++) {
+      WIDGETS_BACKGROUND[i] = 0;
+    }
     for (int l=0; l<32; l+=2) {
       for (int b=0; b<8; b+=2) {
 	WIDGETS_BACKGROUND[b+l*32]=tile++;

@@ -31,7 +31,7 @@ $M-clean:
 # main targets
 #---------------------------------------------------------------------------------
 
-$(TARGET).nds	: $(TARGET).arm9 $(PPP7)
+$(TARGET).nds	: $(TARGET).arm9 $(PPP7) $(wildcard $(ROOT)/$M/efsroot/*.cmd)
 $(TARGET).arm9	:	$(TARGET).elf
 $(TARGET).elf	:	$(OFILES) $(LIBDEPS)
 
