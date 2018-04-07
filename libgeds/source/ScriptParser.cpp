@@ -10,6 +10,7 @@
 extern Engine ge;
 
 #include <cstdarg>
+#include "GobExpression.cxx"
 
 ScriptParser::ScriptParser(GameScript *gs, InputReader *input, GobTank &tank,
 			   s16 *ctrs, bool reload)

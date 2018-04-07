@@ -12,7 +12,7 @@
 // HOOK #include "LayersConfig.h"
 #include "SprFile.h"
 #include "ScriptParser.h"
-// HOOK #include "GobExpression.cxx"
+#include "GobExpression.cxx"
 
 extern Engine ge;
 
@@ -36,6 +36,7 @@ void GameScript::stop() {
 }
 
 GobTank gtk;
+template<> GobTank* GobExpression<GobTank>::tank = &gtk;
 
 bool GameScript::reload(InputReader *_input) { 
   return false;

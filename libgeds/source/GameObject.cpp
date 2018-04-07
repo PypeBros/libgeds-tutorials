@@ -228,7 +228,7 @@ class GobState;
 class GameObject;
 
 GobTransition::GobTransition(const GobState* st) :
-    target(st),breakpoint(false),self(0) {
+    target(st),pred(),action(),breakpoint(false),self(0) {
     self=this;
 }
 
@@ -240,19 +240,21 @@ GobTransition::~GobTransition() {
 }
 
 bool GobTransition::predicate(GobCollision *c, bool focused) {
+    if (!pred.eval(c)) return false;
     return true;
 }
 
 const GobState *GobTransition::outstate(GobCollision *c) {
+    action.eval(c);
     return target;
 }
 
 bool GobTransition::parse_pred(char *expr) {
-    return true;
+    return pred.parse(expr);
 }
 
 bool GobTransition::parse_action(char *expr) {
-    return true;
+    return action.parse(expr);
 }
 
 bool GobTransition::use_anim(GobAnim *an) {
@@ -394,6 +396,8 @@ Animator::donecode CommonGob::gobDoChecks() {
 }
 
 Mallocator withMalloc;
+template<>
+Mallocator* GobExpression<Mallocator>::tank = &withMalloc;
 Mallocator* UsingMalloc::tank = &withMalloc;
 
 void UsingTank::settank(GobTank *tk) {

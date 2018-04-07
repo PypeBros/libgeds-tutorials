@@ -137,7 +137,7 @@ public:
     REG_DISPCNT|=DISPLAY_BG2_ACTIVE;
     REG_BG2CNT=BG_MAP_BASE(GEBGROUND)|BG_TILE_BASE(2)|BG_COLOR_256;
     tileno_t tile = 0;
-    for (int i = 0; i < 32*32; i++) {
+    for (int i = 0; i < 32*24*2; i++) {
       WIDGETS_BACKGROUND[i] = 0;
     }
     for (int l=0; l<32; l+=2) {

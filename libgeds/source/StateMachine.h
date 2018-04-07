@@ -10,11 +10,26 @@
 #include "SpriteAnim.h" // for iAnimUser
 #include "GameObject.h"
 #include "GameConstants.h"
-
 #define MAX_LIMBS 12
 
 #define STEPX 14  // within CDATA
 #define STEPY 15
+
+/** internal encoding of the operations for GobExpressions */
+enum ActionOpcodes {
+  OP_DONE=0, OP_NEG, OP_NOT, OP_INC, OP_DEC, OP_SCORE,
+  OP_TRUE, OP_FALSE, OP_DEBUG, OP_FLICKER,
+  OP_GETVAR=0x10,   //!< lower 4 bits encode which var we refer to.
+  OP_SETVAR=0x20,   //!< see GETVAR
+  OP_CONSTANT=0x30, //!< lower 4 bits encode which constant we want
+  OP_ADD=0x40, OP_SUB, OP_MIN, OP_MAX,
+        OP_OR, OP_AND, OP_XOR, OP_NAND,
+       OP_MUL, OP_DIV, OP_MOD, // 0x3b-3f remain available
+  OP_EQ=0x50, OP_NEQ, OP_LT,   OP_GT,
+      OP_LTE, OP_GTE, OP_TEST, OP_NTST,
+
+  OP_DUP=0x60, OP_SHL=0x70, OP_SHR=0x80,
+};
 
 enum AnimCommandType {
   ANIM_DONE,     // 00 : anim is over
@@ -26,6 +41,13 @@ enum AnimCommandType {
   ANIM_DELAY,    // 06 : wait for X steps
   ANIM_CHECK,    // 07 : run testpoints and says "fail" if they're wrong.
   /** more commands could alter ALPHA, rotation, etc. **/
+};
+
+/** context for evaluating expressions */
+struct GobCollision {
+  const GobArea *area;
+  GameObject *gob;
+  s16 *data;
 };
 
 class Mallocator {
@@ -162,6 +184,7 @@ class GobState;
 
 // see GameObject.h
 class GameObject;
+#include "GobExpression.cxx"
 
 /** expresses a state->state transition, indicating the predicate
  *  expression that must be met in order for the transition to take
@@ -172,6 +195,8 @@ class GameObject;
 class GobTransition : UsingTank {
   NOCOPY(GobTransition);
   const GobState *target; // which state should we branch to ?
+  GobExpression<GobTank> pred;
+  GobExpression<GobTank> action;
   bool breakpoint;
   void* self;
   friend class InspectorWidget;

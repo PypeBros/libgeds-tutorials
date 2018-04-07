@@ -11,10 +11,12 @@ typedef int cflags;
 
 #include "debug.h"
 
+template <typename Tank>
+class GobExpression;
 // see StateMachine.h
 class GobTransition;
-class GobCollision;
 class GobState;
+struct GobCollision;
 
 /** "gob registers" assignments agreed across controllers. **/
 enum gobdata {
