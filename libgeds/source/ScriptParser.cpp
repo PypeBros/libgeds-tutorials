@@ -171,7 +171,7 @@ bool ScriptParser::StatCommand(const char* l) {
 	step("processing state %u\n",stno);
 	sniprintf(myname,6,"%c%c%u",cmdfile[0],cmdfile[1],stno);
 	workst[stno]=new GobState(anim[anno],myname);
-	// HOOK: workst[stno]->parse(input);
+	workst[stno]->parse(input);
 	return true;
       }
       return false;
@@ -200,10 +200,9 @@ bool ScriptParser::StatCommand(const char* l) {
       for (unsigned i=sti;i<=stl;i++) {
 	if (!workst[i]) continue;
 	switch(event[0]) {
-	  /* HOOK:	case 'f':
-	     workst[i]->addOnfail(t, i==stl);
-	     break;
-	  */
+	case 'f':
+	  workst[i]->addOnfail(t, i==stl);
+	  break;
 	case 'd':
 	  workst[i]->addOndone(t, i==stl);
 	  break;
@@ -230,7 +229,7 @@ bool ScriptParser::StatCommand(const char* l) {
 
       const GobState *tgt = (stf==~0U) ? &GobState::nil : workst[stf];
       GobTransition *t= parseTransition(l,cont,tgt);
-      // HOOK: if (event[0]=='f') workst[sti]->addOnfail(t);
+      if (event[0]=='f') workst[sti]->addOnfail(t);
       if (event[0]=='d') {
 	if (workst[sti]->getanim()->testloop())
 	  return report("%s transition on looping animation",event);

@@ -8,10 +8,16 @@
 class SpriteSet; // defined in SpriteSet.h.
 class SpriteRam;
 
+/** bits describing how the world behaves.
+    better avoid using 0x8000 for signedness conflicts awaits you at the end **/
+enum tile_properties {
+  F_FALLTHRU   =0x80,
+};
+
 class GameObject;
 
 #include <string>
-// #include <map>
+#include <map>
 
 /** an abstract resource reader, returning contents line by line 
  */
@@ -67,9 +73,62 @@ class iDebugable : public Animator {
   virtual ~iDebugable() {}
 };
 
+class iGobController;
 #include "GameObject.h"
 
-enum iThought { NONE=0, INIT=8 };
+class iControllerFactory {
+  NOCOPY(iControllerFactory);
+  static iControllerFactory* allUnregistered;
+  iControllerFactory* nextUnregistered;
+protected:
+  std::string name;
+public:
+  iControllerFactory() : nextUnregistered(allUnregistered),
+			 name()
+  {
+    allUnregistered = this;
+  }
+  const std::string getname() { return name;}
+  static bool registerAll();
+  virtual iGobController* create(char* args)=0;
+  virtual ~iControllerFactory() {}
+};
+
+enum iThought { NONE=0, EVENT=1, FAIL=2, INIT=8 };
+
+/** defines something to do with a Gob at every frame */
+class iGobController : protected UsingScript, UsingTank {
+  NOCOPY(iGobController);
+  /** rather than creating complex and complete controllers, let's chain simple operations,
+   *  at GobScript level.
+   */
+  iGobController* next;
+  const iControllerFactory* madein;
+public:
+  void* operator new(std::size_t sz);
+  void operator delete(void *ptr);
+  iGobController(const iControllerFactory *icf) 
+    : next(0), madein(icf)
+  {
+  }
+
+  /** add a new controller to the chain */
+  void enqueue(iGobController* ct) {
+    if (next) next->enqueue(ct);
+    else next=ct;
+  }
+  /** call the next controller in the chain, then combine their thoughts
+   *   to indicate to the game engine what transitions should be performed.
+   */
+  inline iThought combine(iThought a, s16 gob[8], GameObject *g) {
+    iThought b = next?next->think(gob,g):NONE;
+    return (iThought)((int)a | (int)b);
+  }
+  /** do the job for this frame. Tells whether we can stay in this state */
+  virtual iThought think(s16 gob[8], GameObject *g)=0;
+  virtual ~iGobController() { if (next) delete next;}
+};
+
 
 /** how to know when a level change starts or ends
  */

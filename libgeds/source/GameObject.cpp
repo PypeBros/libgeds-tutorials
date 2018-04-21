@@ -261,14 +261,18 @@ bool GobTransition::use_anim(GobAnim *an) {
     return true;
 }
 
+void* iGobController::operator new(std::size_t sz) { return tank->place(sz); }
+void iGobController::operator delete(void* ptr) { if (ptr) tank->release(ptr); }
+
 void cleartransitions(std::vector<GobTransition*> &vt, unsigned own) {
   for(int i=0, n=vt.size(), j=1; i<n; i++, j=j<<1)
     if (vt[i] && (own&j)) delete vt[i];
 }
 
 struct GobStateBuilding {
+  std::vector<GobTransition*> onfail; // TANK me.
   std::vector<GobTransition*> ondone; // TANK me.
-  GobStateBuilding() : ondone() {}
+  GobStateBuilding() : onfail(), ondone() {}
 };
 
 void GobState::dumpchecks() const {
@@ -276,28 +280,41 @@ void GobState::dumpchecks() const {
 	  chkflr, chkoff, cspeed, chknw);*/
 }
 
+bool GobState::regctrl(iControllerFactory* fact) {
+    const std::string n=fact->getname();
+    controllers.insert(PAIR(n,fact));
+    return true;
+}
+
 GobState::GobState(GobAnim *a, const char* pn) :
-    anim(a),
-    ondone(),
+    anim(a), ctrl(0),
+    onfail(), ondone(),
     building(0), owndone(0)
 {
     if (pn) strncpy(name, pn, 8);
     if (a==0 && strcmp(name,"nil")==0) {
       ondone = &noTransitions;
+      onfail = &noTransitions;
+    }
+    if (a && ! controllersReady) {
+      iControllerFactory::registerAll();
+      controllersReady = true;
     }
 }
 
   /** consider all state transitions have now been inserted.
    */
 void GobState::freeze() {
-    
 
     if (building==0) return;
-    unsigned ntransitions = building->ondone.size();
+    unsigned ntransitions = building->onfail.size() + building->ondone.size();
     GobTransition **t = (GobTransition**) 
       tank->place(sizeof(GobTransition*) * ntransitions);
 
     ondone = t;
+    for (unsigned i=0, n=building->onfail.size(); i<n; i++)
+      *t++ = building->onfail[i];
+    *t++ = 0;
     for (unsigned i=0, n=building->ondone.size(); i<n; i++)
       *t++ = building->ondone[i];
     *t++ = 0;
@@ -313,16 +330,72 @@ GobState::~GobState() {
     /** ALL YOUR STUFF ARE BELONG TO TANK */
 }
 
+void GobState::addOnfail(GobTransition* t, bool own) {
+    if (own) ownfail|=(1<<building->onfail.size());
+    building->onfail.push_back(t);    
+}
+
 void GobState::addOndone(GobTransition* t, bool own) {
     if (own) owndone|=(1<<building->ondone.size());
     building->ondone.push_back(t);    
 }
+
+void GobState::queue_controller(iGobController *ct) {
+    if (ctrl) ctrl->enqueue(ct);
+    else ctrl=ct;
+}
+
+const char* GobState::parse(InputReader *input, unsigned *meds, unsigned medsize) {
+    char lb[256]="";
+    char *l=0;
+    building = new GobStateBuilding();
+    
+    do {
+      if (!input->readline(lb,256)) break;
+      if (!(l=UsingParsing::content(lb))) continue;
+
+      char ctrlname[16]=""; char args[32]="";
+      if (siscanf(l,"using %15[a-z] (%31[^)])",ctrlname,args)>=1) {
+	std::string name(ctrlname);
+	iControllerFactory *factory;
+	step("checking '%s' amongst %i\n", name.c_str(), controllers.size());
+	if ((factory = controllers[name])) {
+	  step("got it (%p).\n",factory);
+	  queue_controller(factory->create(args));
+	} else throw iScriptException("no '%s' controller registered.\n", ctrlname);
+      }
+
+    } while (!l || l[0]!='}');
+    return "";
+}
+
 
 const GobState* GobState::onDoneChecks(GobCollision *c) const {
     for (unsigned i=0;ondone[i] ;i++)
       if (ondone[i]->predicate(c)) return checkself(ondone[i]->outstate(c));
     return 0;
 }
+
+const GobState* GobState::onFailChecks(GobCollision *c, bool focused) const {
+    for (unsigned i = 0; onfail[i]; i++)
+      if (onfail[i]->predicate(c, focused)) return checkself(onfail[i]->outstate(c));
+    return 0;
+}
+
+const GobState* GobState::dochecks(u16 x, u16 y,
+				   GobCollision *c, bool verbose) const
+{
+    return onFailChecks(c);
+}
+
+
+bool iControllerFactory::registerAll() {
+  for (iControllerFactory* p = allUnregistered; p; p = p->nextUnregistered)
+    if (! GobState::regctrl(p)) return false;
+  return true;
+}
+iControllerFactory* iControllerFactory::allUnregistered = 0;
+bool GobState::controllersReady = false;
 
 GameObject::GameObject(CAST c, int gno, const char *pname) : 
   iDebugable(0, pname), self(), cdata(), hotx(0), hoty(0),
@@ -365,7 +438,7 @@ void GameObject::clearDynGobs() {
 
 CommonGob::CommonGob(CAST _cast, GobState *init, int gno) :
     GameObject(_cast, gno, (char*)((_cast==HERO)?"hero":"sgob")), 
-    state(0), 
+    ctrl(0),state(0), 
     reload_anim(false),forcechecks(false), lastth(INIT),oam(0),areamask(0)
 {
 }
@@ -375,6 +448,7 @@ bool CommonGob::_setstate(const GobState* st) {
     if (state!=st) {
       if (st==&GobState::self) st=state; // -> self doesn't reload the animation.
       else reload_anim=true;
+      ctrl =st->getcontroller();
       state=st;
     } else reload_anim=true;
     return true;
@@ -395,6 +469,36 @@ Animator::donecode CommonGob::gobDoChecks() {
     return Animator::QUEUE;
 }
 
+void CommonGob::gobRunControllers(GobCollision *c) {
+    iThought th=NONE;
+    if (ctrl) th = ctrl->think(cdata,this);
+    lastth=th;
+
+    switch(th) {
+    case INIT:
+      break;
+    case NONE:
+      if (focus && debugging) iprintf(CON_GOTO(0,24) "  ");
+      {
+	x += cdata[0]; y += cdata[1];
+      }
+      break;
+    case FAIL:
+      {
+	x += cdata[0]; y += cdata[1];
+      }
+      if (_setstate(state->dochecks(px(), py(), c, debugging&&focus))) { 
+	// hook : state transition occured
+      } else { 
+	// hook : state transition cancelled.
+      }
+      break;
+    case EVENT:
+      break;
+    }
+}
+
+
 Mallocator withMalloc;
 template<>
 Mallocator* GobExpression<Mallocator>::tank = &withMalloc;
@@ -407,6 +511,7 @@ void UsingTank::settank(GobTank *tk) {
 GameObject::GobList GameObject::gobs[NBLISTS];
 const GobState GobState::nil(0,"nil");
 const GobState GobState::self(0,"self");
+GobState::MAP GobState::controllers;
 
 int GameObject::paused = 0;
 bool GameObject::debugging=false;

@@ -140,7 +140,7 @@ public:
     if (state==&GobState::nil) hide();
     if (done!=Animator::QUEUE) return done;
 
-    // HOOK:    gobRunControllers(c);
+    gobRunControllers(c);
     if (reload_anim) loadAnim();
 
     if (paused>1) {

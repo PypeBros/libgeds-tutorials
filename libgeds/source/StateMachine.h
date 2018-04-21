@@ -235,13 +235,19 @@ class GobState : iReport, iAnimUser, UsingTank, UsingParsing {
   NOCOPY(GobState);
   char name[8];
   GobAnim *anim;
+  iGobController *ctrl;
+
+  typedef std::map<const std::string, iControllerFactory*> MAP;
+  typedef std::pair<const std::string, iControllerFactory*> PAIR;
+  static MAP controllers;
 public:
   static const unsigned NAREAS = 4;
 private:
-  GobTransition **ondone;
+  static bool controllersReady;
+  GobTransition **onfail,**ondone;
   GobStateBuilding *building;
 
-  u32 owndone; // who's responsible for shared transitions ?
+  u32 owndone, ownfail; // who's responsible for shared transitions ?
 #ifdef GLOBAL_DEBUGGER
   friend GLOBAL_DEBUGGER;
 #endif
@@ -255,7 +261,8 @@ public:
   const static GobState nil,self;
 
   void dumpchecks() const;
-  
+  static bool regctrl(iControllerFactory* fact);
+
   GobState(GobAnim *a, const char* pn=0);
 
   /** consider all state transitions have now been inserted.
@@ -268,11 +275,22 @@ public:
     return anim->getmode();
   }
 
+  void addOnfail(GobTransition* t, bool own=true);
   void addOndone(GobTransition* t, bool own=true);
 
   const char* parse(InputReader *input, unsigned *meds=0, unsigned medsize=0);
 
+  void queue_controller(iGobController *ct);
+
   const GobState* onDoneChecks(GobCollision *c) const;
+  const GobState* onFailChecks(GobCollision *c, bool focused=false) const;
+
+  const GobState* dochecks(u16 x, u16 y, 
+		    GobCollision *c, bool verbose=false) const;
+
+  iGobController* getcontroller() const {
+    return ctrl;
+  }
 
   const void* getcommands() const {
     if (!anim) return 0;
@@ -303,6 +321,7 @@ public:
     FIRSTACTIVE=1;
 
 protected:
+  iGobController* ctrl;
   const GobState* state; // the state we're in ...
   bool reload_anim;     // for use by the sub-class to know whether we changed
   bool forcechecks;

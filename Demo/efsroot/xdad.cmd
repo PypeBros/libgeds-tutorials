@@ -19,7 +19,8 @@ anim1 0 {
    loop
 }
 
-state0 :anim1
+state0 :anim1 {
+}
 
 
 end

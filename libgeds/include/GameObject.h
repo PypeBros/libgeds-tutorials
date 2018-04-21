@@ -22,6 +22,8 @@ struct GobCollision;
 enum gobdata {
   GOB_XSPEED=0,
   GOB_YSPEED,
+  GOB_RESERVED1,
+  GOB_DIRS, // A B slST> < ^ v R L X Y - - - - T c  
 };
 
 /** this is a game object (entity) as the rest of the game engine knows it.
