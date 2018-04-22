@@ -20,7 +20,9 @@ anim1 0 {
 }
 
 state0 :anim1 {
+    using dpad
+    using momentum(x to 512)
+    using momentum(y to 512)
 }
-
 
 end

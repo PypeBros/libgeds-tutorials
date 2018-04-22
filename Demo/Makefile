@@ -7,7 +7,7 @@ CPU := arm9
 DATA := datax
 INCLUDES := include $(ROOT)/libplugins/include
 LIBS = $(EFSLIB) -L $O/lib -lgeds -lppp9 -lntxm9 -lfat -lnds9 #-ldswifi9 
-LIBDIRS = $(LIBNDS) $(LIBGEDS) $(LIBPPP9) $(LIBPLUGINS) $(LIBNTXM)
+LIBDIRS = $(LIBNDS) $(LIBGEDS) $(LIBPPP9) $(LIBNTXM)
 GAME_ICON	:= $(ROOT)/$M/bilogo.bmp
 GAME_TITLE	:=    libgeds demo project
 _CXXFLAGS = -D__USING_NODA__
@@ -30,6 +30,7 @@ $M-clean:
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
+OFILES += $(libplugins_OFILES)
 
 $(TARGET).nds	: $(TARGET).arm9 $(PPP7) $(wildcard $(ROOT)/$M/efsroot/*.cmd)
 $(TARGET).arm9	:	$(TARGET).elf
