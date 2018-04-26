@@ -4,7 +4,6 @@ attic/*
 trace*.log
 */*.zip
 AA-efsroot/*
-*/efsroot/*.spr
 */dox/xml/*
 */dox/latex/*
 */dox/rtf/*
