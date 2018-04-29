@@ -134,20 +134,11 @@ public:
 
   virtual void restore() {
     iprintf("(A) play (Y) stop (X) info (B) dump\n");
-    REG_DISPCNT|=DISPLAY_BG2_ACTIVE;
-    REG_BG2CNT=BG_MAP_BASE(GEBGROUND)|BG_TILE_BASE(2)|BG_COLOR_256;
-    tileno_t tile = 0;
-    for (int i = 0; i < 32*24*2; i++) {
-      WIDGETS_BACKGROUND[i] = 0;
-    }
-    for (int l=0; l<32; l+=2) {
-      for (int b=0; b<8; b+=2) {
-	WIDGETS_BACKGROUND[b+l*32]=tile++;
-	WIDGETS_BACKGROUND[b+l*32 +1 ]=tile++;
-	WIDGETS_BACKGROUND[b+l*32 +32]=tile++;
-	WIDGETS_BACKGROUND[b+l*32 +33]=tile++;
-      }
-    }
+    REG_DISPCNT|=DISPLAY_BG3_ACTIVE|DISPLAY_BG2_ACTIVE;
+    REG_BG3CNT=BG_MAP_BASE(iScript::map_index)|BG_TILE_BASE(iScript::tile_index)|BG_PRIORITY(1)
+      |BG_COLOR_256|BG_64x32;
+    REG_BG2CNT=BG_MAP_BASE(iScript::map_index+2)|BG_TILE_BASE(iScript::tile_index)|BG_PRIORITY(2)
+      |BG_COLOR_256|BG_64x32;
   }
   
   virtual void release () {

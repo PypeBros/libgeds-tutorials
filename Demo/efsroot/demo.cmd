@@ -3,6 +3,8 @@
 #   
 print "loading level1"
 bg0.load "../bg.spr"
+bg0.map "demo.map" 128 128
+bg1.map = bg0.map:1 128 128
 print "loading sprites"
 spr.load "../hero.spr":1
 
