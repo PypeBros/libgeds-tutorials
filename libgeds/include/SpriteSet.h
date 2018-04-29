@@ -368,6 +368,11 @@ class SpriteSet : public iReport {
    *  by default, they are simply ignored.
    */
   bool Load(const char* filename, int wanted = 0, std::vector<DataBlock> *extra = 0);
+
+  /** loads map data from an external .map file, and make as if it was embedded in this 
+   *  SpriteSet.
+   */
+  bool LoadMap(const char* filename);
   //! save data into the file
   /*! Write back information into the file.
    *  in addition to regular info (tileset, palette and block),

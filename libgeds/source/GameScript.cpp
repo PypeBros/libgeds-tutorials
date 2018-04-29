@@ -6,7 +6,7 @@
 #include "interfaces.h"
 #include "SpriteAnim.h" // cleanup
 #include "GameScript.h"
-// HOOK #include "InfiniMap.cpp"
+#include "CommonMap.h"
 #include "StateMachine.h"
 // HOOK #include "farground.h"
 // HOOK #include "LayersConfig.h"
@@ -46,7 +46,7 @@ bool GameScript::reload(InputReader *_input) {
 GameScript::GameScript(InputReader *ir) : 
   /*script(scr), line(scr)*/
   resources(),
-  tiles(), sprites(0),
+  tiles(), sprites(0),maps(),
   /* - we have 256K video ram allocated 
    * - we're using first tile_index 8K slots for non-game content
    * - each KB can contain 16 tiles (64 bytes each)
@@ -58,6 +58,7 @@ GameScript::GameScript(InputReader *ir) :
 {
   UsingTank::settank(&gtk);
   GobAnim::reset();
+  for (uint i=0;i<NB_BGLAYERS;i++) { tiles[i]=0; maps[i]=0; }
   for (uint i=0;i<MAXGOBS;i++) objs[i]=0;
   for (uint i=0;i<MAXSTATES; i++) { states[i]=0; }
   memset(tilesram.raw(),0,64);
@@ -88,7 +89,12 @@ GameScript::~GameScript() {
     iprintf("sprites, ");
     delete sprites;
   }
-  
+  for (int i=0; i < NB_BGLAYERS; i++) {
+    if (maps[i]) {
+      delete maps[i];
+      maps[i]=0;
+    }
+  }
   iprintf("%i extras, ", effects.size());
   for (unsigned i=0;i<effects.size();i++)
     if (effects[i]) delete effects[i];
@@ -106,6 +112,21 @@ GameScript::~GameScript() {
     delete realParser;
   }
   gtk.flush();
+}
+
+bool GameScript::setMap(bglayer_t bg, bglayer_t mapHolder, unsigned srcplane) {
+  if (mapHolder == EMBEDDED) mapHolder = bg;
+  {
+    CommonMap* map = CommonMap::CreateSimpleMap(tiles[mapHolder],
+						(u16*) BG_MAP_RAM(map_index + bg * 2),
+						(3 - bg), srcplane);
+    maps[bg] = map;
+  }
+  return true;
+}
+
+void GameScript::prepareMap(bglayer_t bg, uint xo, uint yo, bool scrollto) {
+  maps[bg]->lookAt(xo,yo);
 }
 
 void GameScript::parsedGob(GameObject *gob, unsigned gobno) {

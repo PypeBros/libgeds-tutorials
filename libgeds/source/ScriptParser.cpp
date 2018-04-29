@@ -2,7 +2,7 @@
 #include <sys/types.h>
 #include <nds.h>
 #include "GameScript.h"
-// Hook: scrolling backgrounds (InfiniMap) needed
+#include "CommonMap.h"
 #include "StateMachine.h"
 // hook : background support
 #include "SprFile.h"
@@ -72,11 +72,43 @@ bool ScriptParser::parsechunk() throw(iScriptException){
 
 
 bool ScriptParser::BgCommand(const char* l) {
-  uint bgu;
+  uint bgu, xo=0, yo=0;
+  uint srcbgu;
   char fullname[64];
   strncpy(fullname, default_dir, 32);
   char *filename = fullname+strlen(fullname);
   step("trying bg commands");
+  if (siscanf(l,"bg%u.map \"%30[^\"]\" %u %u",&bgu, filename,&xo,&yo)>=2) {
+    bglayer_t bg = (bglayer_t) bgu;
+    normalize_filename(fullname);
+    step("loading map from %.48s ...\n",fullname);
+    if (bg<4 && tiles[bg]!=0 && !tiles[bg]->hasmap()) {
+      if (!maps[bg] && tiles[bg]->LoadMap(fullname)) {
+	step("map attached\n");
+	gs->setMap(bg, bg);
+	gs->prepareMap(bg, xo, yo);
+	maps[bg] = true;
+	return true;
+      } else report("O_o couldn't load map %s",fullname);
+    } else report(">_< invalid tileset number (%i)",bg);
+  }
+  uint srcplane;
+  if (siscanf(l,"bg%u.map = bg%u.map:%u %u %u",
+	      &bgu,    &srcbgu,&srcplane,&xo,&yo)==5) {
+    bglayer_t bg = (bglayer_t) bgu;
+    bglayer_t srcbg = (bglayer_t) srcbgu;
+    step("reusing map.\n");
+    if (bg<4 && tiles[srcbg]!=0 && !maps[bg]) {
+      uint maxlayers = tiles[srcbg]->hasmap();
+      if (srcplane<maxlayers) {
+	gs->setMap(bg, srcbg, srcplane);
+	gs->prepareMap(bg, xo, yo);
+	maps[bg] = true;
+	return true;
+      } else report(">_< wrong sublayer %i (%i)",srcplane,maxlayers);
+    } else report(">_< invalid bgs.\n");
+
+  }
 
   if (justreload) {
     iprintf("skipping [%s]: just reloading", l);

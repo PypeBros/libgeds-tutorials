@@ -7,6 +7,7 @@
 #include "SpriteSet.h"
 class GameObject; 
 class GobState; class GobAnim; class GobStructure; 
+class CommonMap;
 
 class ScriptParser;
 #include <GameConstants.h>
@@ -31,6 +32,9 @@ class GameScript : public iScript, public iReport,
 private:
   Resources resources;
   SpriteSet *tiles[NB_BGLAYERS],*sprites;
+
+  /* controls scrolling and level layers display */
+  CommonMap *maps[NB_BGLAYERS];
   /* we will use the upper 64K of VRAM for our tiles.
    * to be assigned among the max 4 tilesets we will manage.
    */
@@ -89,8 +93,10 @@ public:
   virtual GameObject* getgob(gobno_t no);
   virtual ~GameScript();
   /** parser callbacks interface */
+  bool setMap(bglayer_t bg, bglayer_t mapHolder, unsigned mapPlane=0);
   SpriteSet* loadTiles(const char* filename, bglayer_t ly);
   SpriteSet* loadSprites(const char* filename, unsigned ramno);
+  void prepareMap(bglayer_t bg, uint xo, uint yo, bool scrollNow = false);
   GobState* parsedGlobalState(GobState* state, unsigned stateno);
   bool parsedEffect(Animator* fx);
   void parsedGob(GameObject* gob, unsigned gobno);
