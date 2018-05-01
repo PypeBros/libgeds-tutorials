@@ -207,11 +207,16 @@ public:
   }
 };
 
+class LayersConfig;
+
 class Window {
   NOCOPY(Window);
+  //! default configuration for using the GUI.
+  static LayersConfig* GuiLayers;
  protected:
   uint16 nbWidgets,wstart;
   Window* super;
+  LayersConfig* layers;
   std::vector<struct WidgCoords> obj;
  public:
   bool transient; //!< a transient window will recieve GUI_ANYKEY to handle
@@ -229,8 +234,8 @@ class Window {
   virtual Widget* add(screen_pixel_t x, screen_pixel_t y, Widget* w)=0;
   /* receive a "help page" and returns the id of the next page */
   virtual int help(int no);
-  Window() :
-    nbWidgets(0),wstart(0),super(0),obj(),
+  Window(LayersConfig *lc = 0) :
+    nbWidgets(0),wstart(0),super(0),layers(lc),obj(),
     transient(false),isdown(true),active(true), swap_colors(true) {
   }
   Window* holder() { return super;}
@@ -301,7 +306,7 @@ class Engine {
 #ifdef DYNAMIC_ENGINE
   ~Engine();
 #endif
-  
+  static bool isConsoleDown() { return singleton->config & CONSOLE_DOWN; }
   void setWindow(Window* itf); /* use changeWindow if you need a static one */
   static uint getKeysHeld() { return singleton->held;}
   static void enable3D();
@@ -339,7 +344,7 @@ protected:
   static volatile u32* LAYERS; //=REG_DISPCNT
   static u16* vram; //=WIDGETS_OVERLAY;
 public:
-  UpWindow() : Window() { }
+  UpWindow(LayersConfig* lc = 0) : Window(lc) { }
   virtual Widget* add(screen_pixel_t x, screen_pixel_t y, Widget* w) {
     isdown=false;
     u16* vr=vram+(y/8)*32+(x/8);
@@ -356,7 +361,7 @@ protected:
   static volatile u32* LAYERS; //=REG_DISPCNT
   static  u16* vram;
 public:
-  DownWindow() : Window() { }
+  DownWindow(LayersConfig *lc = 0) : Window(lc) { }
   inline Widget* add(screen_pixel_t x, screen_pixel_t y, Widget* w) {
     isdown=true;
     u16* vr=vram+(y/8)*32+(x/8);

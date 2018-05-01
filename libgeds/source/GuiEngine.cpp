@@ -1,6 +1,7 @@
 #include <nds.h>
 #include "GuiEngine.h"
 #include "UsingSprites.h"
+#include "LayersConfig.h"
 #include "Animator.h"
 #include <stdio.h>
 
@@ -31,6 +32,20 @@ unsigned Window::setmark(uint mode/*=END_OF_LINE*/) {
   obj.push_back(w);
   return nbWidgets++;
 }
+
+void Window::clearscreen() {
+  if (layers) {
+    layers->clearscreen();
+  } else {
+    if (super) {
+      super->clearscreen();
+    } else {
+      GuiLayers->clearscreen();
+    }
+  }
+}
+
+
 
 int Window::help(int no) { 
   iprintf("     ** no help here yet **\n\n\n\n"
@@ -591,7 +606,6 @@ void Window::dump() {
 
 void Engine::dump() {
   debug_mode=true;
-  sanitize();
   
   //  dprint("registered: %i+%i OAMs\n",singleton->rescount[RES_OAM],singleton->rescount[RES_OAM_SUB]);
   //  dprint("animation list starts at %p\n",singleton->todo);

@@ -8,6 +8,7 @@
 class GameObject; 
 class GobState; class GobAnim; class GobStructure; 
 class CommonMap;
+class GameLayers;
 
 class ScriptParser;
 #include <GameConstants.h>
@@ -17,12 +18,19 @@ protected:
   static const ScriptParser* parser;
 };
 
+class UsingGameLayers { 
+protected:
+  static LayersConfig *gameLayers;
+  UsingGameLayers();
+  ~UsingGameLayers();
+};
+
 /** The real running-level state
  *  it lives as long as we are in the level. It owns all the resource containers
  *  as well as all the dynamic GameObjects.
  */
 class GameScript : public iScript, public iReport,
-		   private UsingResources, private UsingScriptParser
+		   private UsingGameLayers, private UsingResources, private UsingScriptParser
 {
   NOCOPY(GameScript);
 #ifdef GLOBAL_DEBUGGER
@@ -45,6 +53,7 @@ private:
   GameObject *objs[MAXGOBS];
   GobState *states[MAXSTATES];
   static GameScript* running;
+  static GameLayers* gameLayers;
   static s16 counters[MAXCOUNTERS+1]; // counter[16] is the score.
 
   std::vector<Animator*> effects;
@@ -110,6 +119,7 @@ public:
     else if (i==4 && sprites) return sprites;
     else return 0;
   }
+  static LayersConfig* makeLayersConfig();
   virtual bool setGobState(gobno_t target, unsigned stateno);
 };
 

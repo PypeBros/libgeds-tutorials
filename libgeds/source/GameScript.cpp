@@ -9,7 +9,7 @@
 #include "CommonMap.h"
 #include "StateMachine.h"
 // HOOK #include "farground.h"
-// HOOK #include "LayersConfig.h"
+#include "LayersConfig.h"
 #include "SprFile.h"
 #include "ScriptParser.h"
 #include "GobExpression.cxx"
@@ -17,6 +17,107 @@
 extern Engine ge;
 
 #include <cstdarg>
+class GameLayers : public LayersConfig {
+  unsigned map_index;
+  unsigned tile_index;
+  int offset;
+  unsigned fargroundShape;
+public:
+  void updateBackgroundTileBase(int offset_)
+  {
+    offset = offset_;
+    iReport::step("assign tilebase %i for bg2\n", offset + tile_index);
+    showConsole(console_shown);
+  }
+  
+  GameLayers(unsigned map_index, unsigned tile_index,
+	      layersmask_t dontclear = (YOUR << 4) | ALL) :
+    LayersConfig(dontclear, default_clearers, Engine::isConsoleDown()),
+    map_index(map_index),
+    tile_index(tile_index),
+    offset(0),
+    fargroundShape(BG_64x32)
+  {
+  }
+  void setVerticalFarGround(bool vertical) {
+    if (vertical) {
+      fargroundShape = BG_32x64;
+    } else {
+      fargroundShape = BG_64x32;
+    }
+    showConsole(console_shown);
+  }
+  
+  unsigned getPhysicalLayer(unsigned gameLayer) {
+    unsigned physical[4] = { 3, 2, 1, 0 };
+    return physical[gameLayer & 3];
+  }
+  
+  void apply() {
+    LayersConfig::apply();
+    REG_DISPCNT|=DISPLAY_BG3_ACTIVE|DISPLAY_BG2_ACTIVE| // our map
+      DISPLAY_BG1_ACTIVE; //< console -- background if any > |DISPLAY_BG    showConsole(console_shown);
+    
+
+    REG_BG3CNT=BG_MAP_BASE(iScript::map_index)|BG_TILE_BASE(iScript::tile_index)|BG_PRIORITY(1)
+      |BG_COLOR_256|BG_64x32;
+    REG_BG2CNT=BG_MAP_BASE(iScript::map_index+2)|BG_TILE_BASE(iScript::tile_index)|BG_PRIORITY(2)
+      |BG_COLOR_256|BG_64x32;
+
+    REG_BG0CNT&=~BG_PRIORITY(1);
+    REG_BG0CNT|=BG_PRIORITY(2);
+    showConsole(console_shown);
+    Engine::enable3D();
+  }
+
+  void showConsole(visible_t showme) {
+    if (showme == SHOW) {
+      if (console_down) {
+	LayersConfig::showConsole(showme);
+	return;
+      }
+      REG_BG1CNT=BG_MAP_BASE(GECONSOLE)|BG_TILE_BASE(0)|BG_PRIORITY(0); // keep the console on another layer.
+      REG_BLDALPHA=0x1008;
+      REG_BLDCNT = BLEND_SRC_BG1|
+	BLEND_DST_BG2|BLEND_DST_BG0|BLEND_DST_BG3|BLEND_DST_SPRITE|BLEND_DST_BACKDROP|
+	BLEND_ALPHA;
+      REG_BG1HOFS=0;
+      REG_BG1VOFS=0;
+    } else {
+      // HOOK: restore farground
+      REG_BLDCNT = 0;
+    }
+    console_shown = showme;
+  }
+};
+
+
+LayersConfig *UsingGameLayers::gameLayers = 0;
+GameLayers* GameScript::gameLayers = 0;
+
+/** any UsingGameLayers item must be able to access it as a 'GameLayers' object.
+ * GameScript knows how to create it (has map_index and tile_index value), but
+ * also needs to adjust parameters such as the tile base for the background
+ * layer.
+ */
+UsingGameLayers::UsingGameLayers()
+{
+  if (gameLayers == 0)
+    gameLayers = GameScript::makeLayersConfig();
+}
+
+UsingGameLayers::~UsingGameLayers()
+{
+}
+
+LayersConfig *GameScript::makeLayersConfig()
+{
+  if (gameLayers == 0)
+    gameLayers = new GameLayers(map_index, tile_index);
+  return gameLayers;
+}
+
+
 #include "InputReader.h"
 
 GameObject* GameScript::getgob(gobno_t i) {
@@ -119,7 +220,8 @@ bool GameScript::setMap(bglayer_t bg, bglayer_t mapHolder, unsigned srcplane) {
   {
     CommonMap* map = CommonMap::CreateSimpleMap(tiles[mapHolder],
 						(u16*) BG_MAP_RAM(map_index + bg * 2),
-						(3 - bg), srcplane);
+						gameLayers->getPhysicalLayer(bg), srcplane);
+    gameLayers->setVerticalFarGround(map->needsVertical());
     maps[bg] = map;
   }
   return true;

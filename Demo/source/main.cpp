@@ -81,6 +81,7 @@ public:
     iprintf("creating windows -- ");
     ntxm9 = new NTXM9();
     active = &gamewin;
+    gamewin.showConsole(LayersConfig::SHOW);
   }
   
   virtual bool event(Widget *w, uint id) {
@@ -113,6 +114,11 @@ public:
     if (keys & KEY_A) {
       ntxm9->play();
     }
+    if (keys & KEY_START) {
+      bool LDown = keys & KEY_L;
+      ge.setWindow(LDown ? active : this);
+    }
+    
     if (keys & KEY_Y) {
       ntxm9->stop();
     }
@@ -134,11 +140,6 @@ public:
 
   virtual void restore() {
     iprintf("(A) play (Y) stop (X) info (B) dump\n");
-    REG_DISPCNT|=DISPLAY_BG3_ACTIVE|DISPLAY_BG2_ACTIVE;
-    REG_BG3CNT=BG_MAP_BASE(iScript::map_index)|BG_TILE_BASE(iScript::tile_index)|BG_PRIORITY(1)
-      |BG_COLOR_256|BG_64x32;
-    REG_BG2CNT=BG_MAP_BASE(iScript::map_index+2)|BG_TILE_BASE(iScript::tile_index)|BG_PRIORITY(2)
-      |BG_COLOR_256|BG_64x32;
   }
   
   virtual void release () {

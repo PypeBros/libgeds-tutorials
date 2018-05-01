@@ -4,6 +4,7 @@
 #include "GameScript.h"
 #include "CommonMap.h"
 #include "StateMachine.h"
+#include "LayersConfig.h"
 // hook : background support
 #include "SprFile.h"
 #include "ScriptParser.h"

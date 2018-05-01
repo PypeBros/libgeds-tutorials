@@ -1,3 +1,5 @@
+#include "GameScript.h"
+#include "LayersConfig.h"
 #include <InputReader.h>
 
 /** provides the environment for loading a new level.
@@ -51,7 +53,7 @@ public:
 
 class GameWindow : public DownWindow, public iButtonListener, 
 		  public iScriptListener, 
-		  private UsingResources
+		  private UsingGameLayers, private UsingResources
 {
   NOCOPY(GameWindow);
 protected:
@@ -68,8 +70,15 @@ public:
     loader(loadr), parse_on_demand(false)
   {
     super=sup;
+    layers = gameLayers;
+    layers->showConsole(LayersConfig::HIDE);
   }
 
+  void showConsole(LayersConfig::visible_t showit)
+  {
+    layers->showConsole(showit);
+  }
+  
   /* handles GameScript::setNextLevel(), invoked form LevelGun.
    * This will switch to the 'loader' window, suspending all game
    * activity (CmdWindow::release())
@@ -100,6 +109,7 @@ public:
 	iprintf("#");
       }
     } catch (iScriptException &e) {
+      layers->showConsole(LayersConfig::SHOW);
       iReport::report(e.what());
       iReport::diagnose();
       die(0,0);
