@@ -27,6 +27,27 @@ CommonMap::~CommonMap() {
     if (owndata && data) free(data);
   }
 
+
+  /** The map is responsible of how properties and 'extra block ids' are
+   *  encoded. BlockInfo and BlockArea are responsible of how we react
+   *  with other objects.
+   */
+tile_properties_t CommonMap::getflags(world_tile_t tx, world_tile_t ty, GameObject *who) {
+    using ::iWorld;
+    if (tx>tw) return 0;
+    if (ty&0x8000) return F_FALLTHRU|F_PLAYERTHRU;
+    if (ty>th) return 0;
+    volatile u16 tile = data[tx+ty*tw];
+    u16 t=tile&0xf000;
+    if ((t>>12)<12)
+      return properties[t>>12];
+    else {
+      uint extra = 0; // HOOK: locate block and BlockArea processing.
+      return (extra<<16)|
+	properties[(extra&0x30)>>4];
+    }
+  }
+
 /** Implementation of level layer that fits the VRAM completely.
  *  that would be 32x64 tiles or 64x32 tiles.
  */

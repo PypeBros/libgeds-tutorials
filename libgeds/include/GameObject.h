@@ -13,6 +13,24 @@ typedef int cflags;
 
 typedef int world_coords_t; //!< a 24.8 fixed point coordinate, sub-pixel.
 
+class UsingWorld {
+protected:
+  static iWorld* world;
+  static int instances; // paranoia
+  UsingWorld() {
+    // HOOK: auto-assign the camera's main layer.
+    instances++;        // paranoia
+  }
+
+public:
+  virtual ~UsingWorld() {
+    instances--;        // paranoia
+  }
+
+  // if you ever change the world, you should call reset here!
+  static void reset();
+};
+
 template <typename Tank>
 class GobExpression;
 // see StateMachine.h
@@ -32,7 +50,7 @@ enum gobdata {
     it has cdata that can be manipulated by controllers, a position, a size
     and a cast: everything you need to control and run collision tests on it.
 */
-class GameObject : public iDebugable {
+class GameObject : public UsingWorld, public iDebugable {
   NOCOPY(GameObject);
   friend class ScriptParser; // ::GobCommand(char *l);
 #ifdef GLOBAL_DEBUGGER
@@ -59,7 +77,7 @@ protected:
   static GobTransition **doevents;
   static bool debugging;
   static int paused;
-  static int raiser_flag;
+  static tile_properties_t raiser_flag;
   // public: // <-- or friend of GameScript.
   s16 cdata[16]; //!< 8 words of data that are controlled by the engine
                  //!< the next 8 words are free to use for #GobExpression
@@ -139,6 +157,31 @@ public:
     _x=(x>>8)+(wbox*center)/2;
     _y=(y>>8)+(hbox*center)/2;
   }
+  /** tells the flags of the tile located at the hotspot */
+  inline tile_properties_t hotTileType() {
+    return world->getflags((x/256+wbox/2)/8, (y/256+hbox)/8);
+  }
+    
+  inline tile_properties_t canbot(int dx, int dy, tile_properties_t thru) {
+    int sy = (y/256 + hbox)/8;
+    int ey = (y+dy)/256 + hbox;
+    int sx=((x+dx)/(256*8)), ex=(x+dx)/256+wbox;
+    ex=ex/8+((ex&7)?1:0);
+    ey=ey/8+((ey&7)?1:0);
+	 
+    for (int ty=sy; ty<ey ; ty++) 
+      for (int tx=sx; tx<ex; tx++)
+	thru&=world->getflags(tx, ty);
+    return thru;
+  }
+
+  /** tests the properties of blocks between (x+dx, y+dy) and
+   *  (x+dx+w, y+dy+h)
+   * speeds are also in 24.8 fixed point, e.g. 256 = 1 pixel 
+   * \image html cando.png
+   * \return those of the thru properties that hold on the whole area.
+   */
+  tile_properties_t cando(int dx, int dy, tile_properties_t thru);
 
   static GameObject* CreateSimpleGob(CAST _cast, GobState *init, int gno = -1);
 };

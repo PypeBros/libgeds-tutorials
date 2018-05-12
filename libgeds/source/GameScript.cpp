@@ -215,6 +215,14 @@ GameScript::~GameScript() {
   gtk.flush();
 }
 
+class UseMapAsWorld : UsingWorld {
+public:
+  UseMapAsWorld(CommonMap *map) {
+    world = map;
+  }
+};
+
+
 bool GameScript::setMap(bglayer_t bg, bglayer_t mapHolder, unsigned srcplane) {
   if (mapHolder == EMBEDDED) mapHolder = bg;
   {
@@ -223,6 +231,9 @@ bool GameScript::setMap(bglayer_t bg, bglayer_t mapHolder, unsigned srcplane) {
 						gameLayers->getPhysicalLayer(bg), srcplane);
     gameLayers->setVerticalFarGround(map->needsVertical());
     maps[bg] = map;
+    if (bg == 0) { // FIXME: needs the camera system.
+      UseMapAsWorld setup(map);
+    }
   }
   return true;
 }

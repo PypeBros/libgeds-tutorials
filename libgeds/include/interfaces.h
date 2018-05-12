@@ -12,10 +12,31 @@ class SpriteRam;
 /** bits describing how the world behaves.
     better avoid using 0x8000 for signedness conflicts awaits you at the end **/
 enum tile_properties {
+  F_PLAYERTHRU=1,
+  F_BLOCKING  =2,
+  F_FLOOR     =4,
+  F_LSLOPE    =8,  // is higher on the left
+  F_RSLOPE  =0x10, // is higher on the right.
+  F_MONSTERTHRU=0x20,
+  F_WATER      =0x40,
   F_FALLTHRU   =0x80,
+  F_CLIMB      =0x100,
+  F_NORAISER     =0x4000,
 };
+/** \see tile_properties */
+typedef unsigned tile_properties_t;
 
 class GameObject;
+
+/** an abstraction of the level map, as used by the controllers.
+ */
+class iWorld {
+ public:
+  static tile_properties_t properties[];
+  virtual tile_properties_t getflags(world_tile_t tx, world_tile_t ty, GameObject *who=0)=0;
+  virtual ~iWorld() { /*iprintf("world destroyed\n");*/ };
+};
+#define __I_WORLD__
 
 #include <string>
 #include <map>

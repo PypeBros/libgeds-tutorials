@@ -396,6 +396,23 @@ bool iControllerFactory::registerAll() {
 }
 iControllerFactory* iControllerFactory::allUnregistered = 0;
 bool GobState::controllersReady = false;
+/* validates a move. dx and dy are sub-pixel offsets to the current position
+   and 'thru' is the set of properties that must hold.
+*/
+tile_properties_t GameObject::cando(int dx, int dy, tile_properties_t thru) {
+  GameObject *who = this;
+  int sy=((y+dy)/(256*8)), ey=(y+dy)/256+hbox;
+  int sx=((x+dx)/(256*8)), ex=(x+dx)/256+wbox;
+  ex=ex/8+((ex&7)?1:0);
+  ey=ey/8+((ey&7)?1:0);
+  thru|=raiser_flag;
+  for (int ty=sy; ty<ey; ty++)
+    for (int tx=sx; tx<ex; tx++)
+      thru&=world->getflags(tx,ty, who);
+  raise = !(thru & raiser_flag);
+  thru &= ~raiser_flag;
+  return thru;
+}
 
 GameObject::GameObject(CAST c, int gno, const char *pname) : 
   iDebugable(0, pname), self(), cdata(), hotx(0), hoty(0),
@@ -508,6 +525,8 @@ void UsingTank::settank(GobTank *tk) {
   tank=tk;
 }
 
+int UsingWorld::instances=0;
+iWorld* UsingWorld::world=0;
 GameObject::GobList GameObject::gobs[NBLISTS];
 const GobState GobState::nil(0,"nil");
 const GobState GobState::self(0,"self");

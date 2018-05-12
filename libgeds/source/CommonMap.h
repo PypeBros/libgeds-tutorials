@@ -5,8 +5,7 @@
 /** This is what the GameScript sees from scrolling playable layers.
  * how it actually scrolls is an implementation detail for the sub-classes.
  */
-
-class CommonMap {
+class CommonMap : public iWorld {
 
   NOCOPY(CommonMap);
 protected:
@@ -19,6 +18,10 @@ protected:
   world_tile_t tw, th;  //!< map width and height (in tiles)
   u16 xscreen, yscreen; //!< caching scroll registers until VBL.
   bool owndata;
+
+  vu16* getScrollingRegister(unsigned physlayer);
+
+  virtual tile_properties_t getflags(world_tile_t tx, world_tile_t ty, GameObject *who);
 public:
   /** tries to grab the map in the spriteset if present.
    **   map data is never owned in this case.

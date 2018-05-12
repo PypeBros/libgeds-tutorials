@@ -56,7 +56,54 @@ public:
   virtual ~GobMomentumFactory() {}
 };
 
+class GobFreemoveController : public iGobController {
+  NOCOPY(GobFreemoveController);
+  uint thru;
+
+public:
+  GobFreemoveController(const iControllerFactory *icf, uint thr) : 
+    iGobController(icf),thru(thr)  {}
+  virtual iThought think(s16 gob[8], GameObject *g) {
+    iThought th = NONE;
+    int dx = gob[GOB_XSPEED];
+    int dy = gob[GOB_YSPEED];
+
+    bool couldmove=true;
+    if (thru) couldmove=g->cando(dx,dy,thru);
+    else g->setraise(); // GOBs that move through everything show above everything.
+    if (!couldmove) gob[GOB_YSPEED]=0;
+    else return combine(th,gob,g);
+
+    if (!g->cando(dx,0,F_FALLTHRU)) {
+      gob[GOB_XSPEED]=0;
+      if (dy && g->cando(0,dy,F_FALLTHRU))
+	gob[GOB_YSPEED]=dy;
+      else {
+	gob[GOB_YSPEED]=0;
+	th=FAIL; 
+      }
+    } 
+    return combine(th,gob,g);
+  }
+  virtual ~GobFreemoveController() {}
+};
+
+
+class GobFreemoveFactory : public iControllerFactory {
+public:
+  GobFreemoveFactory(const std::string str) {
+    name=str;
+  }
+  virtual iGobController* create(char *arg) {
+    uint thru; 
+    if (!arg || siscanf(arg,"%x",&thru)<1) thru=F_FALLTHRU;
+    return new GobFreemoveController(this,thru);
+  }
+  virtual ~GobFreemoveFactory() {}
+};
+
 namespace {
   GobMomentumFactory momentum("momentum");
+  GobFreemoveFactory freemove("freemove");
 }
 
