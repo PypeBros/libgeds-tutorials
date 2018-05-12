@@ -334,7 +334,7 @@ protected:
   bool _setstate(const GobState* st);
   static const GobState* onEventChecks(GobCollision *c, GobTransition **onevent);
 
-  virtual void setxy(int x, int y)=0;
+  virtual void setxy(world_pixel_t x, world_pixel_t y)=0;
   virtual Animator::donecode play()=0;
 
   Animator::donecode gobDoChecks();

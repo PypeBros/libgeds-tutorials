@@ -11,6 +11,8 @@ typedef int cflags;
 
 #include "debug.h"
 
+typedef int world_coords_t; //!< a 24.8 fixed point coordinate, sub-pixel.
+
 template <typename Tank>
 class GobExpression;
 // see StateMachine.h
@@ -51,6 +53,9 @@ private:
   static GobList gobs[NBLISTS];
   GobList::iterator self; 
 protected:
+  world_coords_t px2coords(world_pixel_t p) {
+    return (world_coords_t) p << 8;
+  }
   static GobTransition **doevents;
   static bool debugging;
   static int paused;
@@ -60,8 +65,8 @@ protected:
                  //!< the next 8 words are free to use for #GobExpression
   int hotx, hoty; //!< hotspot (pixels) for slope movements.
 protected:
-  int x, y;             //!< coordinates (sub-pixel)
-  int wbox, hbox;       //!< hit box (pixels)
+  world_coords_t x, y;             //!< coordinates (sub-pixel)
+  world_pixel_t wbox, hbox;       //!< hit box (pixels)
   int gobno;            //!< index in the GameScript -1 for dynamic gobs.
 
   bool focus;  // the object is followed by the camera
@@ -99,9 +104,9 @@ public:
   bool isfocus() {return focus;}
   static void setdebug(bool t=true) { debugging=t; }
   /** returns X pixel coordinate of the Gob */
-  inline int px() const { return x>>8; }
+  inline world_pixel_t px() const { return x>>8; }
   /** returns Y pixel coordinate of the Gob */
-  inline int py() const { return y>>8; }
+  inline world_pixel_t py() const { return y>>8; }
 
   static void pause(int val) {
     paused=val;
@@ -117,10 +122,10 @@ public:
   void setfreezable(bool canfreeze) {
     mayfreeze = canfreeze;
   }
-  virtual void setxy(int _x, int _y)=0;
-  void setbbox(int w, int h);
+  virtual void setxy(world_pixel_t _x, world_pixel_t _y)=0;
+  void setbbox(world_pixel_t w, world_pixel_t h);
 
-  inline const void getcoords(int &_x, int &_y) {
+  inline const void getcoords(world_coords_t &_x, world_coords_t &_y) {
     _x=x;
     _y=y;
   }
@@ -130,7 +135,7 @@ public:
    *  - center when center=1,
    *  - bottom-right corner when center=2.
    */
-  inline const void getpxcoords(int &_x, int &_y, int center=0) {
+  inline const void getpxcoords(world_pixel_t &_x, world_pixel_t &_y, int center=0) {
     _x=(x>>8)+(wbox*center)/2;
     _y=(y>>8)+(hbox*center)/2;
   }

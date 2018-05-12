@@ -2,6 +2,7 @@
 #ifndef __GAME_INTERFACES__
 #define __GAME_INTERFACES__
 #include <sys/types.h>
+#include "CoreTypes.h"
 #include "Animator.h"
 #include "Exceptions.h"
 #include "nocopy.h"

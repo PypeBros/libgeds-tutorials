@@ -412,7 +412,7 @@ GameObject::~GameObject() {
   if (cast != DONTLIST) gobs[cast].erase(self);
 }
 
-void GameObject::setbbox(int w, int h) {
+void GameObject::setbbox(world_pixel_t w, world_pixel_t h) {
   wbox = w; hbox = h;
   hotx = w/2;
   hoty = h-1;

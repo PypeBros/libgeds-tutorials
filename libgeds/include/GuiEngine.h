@@ -47,15 +47,7 @@ extern "C" {
 #include <stdio.h>
 
 typedef unsigned oam_t; // a slot in the Object Attributes Memory
-typedef uint16_t screen_pixel_t; // coordinate in pixels with 0 being screen corner
-typedef uint world_pixel_t;      // coordinate in pixels related to level corner
-typedef uint widget_pixel_t;
-typedef uint screen_tile_t;
-typedef int world_tile_t;
-typedef screen_pixel_t sp_t;
-typedef world_pixel_t wp_t;
-typedef screen_tile_t st_t;
-typedef world_tile_t wt_t;
+#include "CoreTypes.h"
 
 #define KEY_DPAD (KEY_RIGHT|KEY_LEFT|KEY_UP|KEY_DOWN)
 #define KEY_ABXY (KEY_A|KEY_B|KEY_X|KEY_Y)

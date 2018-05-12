@@ -53,7 +53,7 @@ public:
     }
   }
 
-  void scrollTo(world_pixel_t px, world_pixel_t py) {
+  virtual void scrollTo(world_pixel_t px, world_pixel_t py) {
   }
 
   SimpleMap(SpriteSet* set, u16* screen, unsigned physlayer, unsigned plane=0) :

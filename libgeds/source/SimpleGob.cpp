@@ -99,7 +99,7 @@ public:
     
   }
 
-  virtual void setxy(int x, int y) {
+  virtual void setxy(world_pixel_t x, world_pixel_t y) {
     this->x=x<<8; this->y=y<<8;
 //    pg->changeOAM(sprites+oam,x-cam->getx(),y-cam->gety(),frame);
   }
